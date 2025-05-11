@@ -13,23 +13,27 @@ class Program
         {
             Validator.ValidateClientArguments(args);
 
-            var message = args[Message];
-            var password = args[Password];
+            var filePath = args[FilePath];
             var ipAddress = args[IpAddressIndex];
             var port = int.Parse(args[PortIndex]);
 
             client = new Client(ipAddress, port);
+            var fileMemoryStream = await client.ReadAndCreateFileInMemory(filePath);
 
             await client.Connect();
-            await client.Send(message, password);
+            
+           // var fileMemoryStream = await client.ReadAndCreateFileInMemory(filePath);
 
-            var data = await client.Receive();
 
-            if (data.Contains("ERROR")) throw new Exception(data);
+         //   await client.Send(message, password);
 
-            var decrypted = EncryptionService.Decrypt(data, password);
+         //   var data = await client.Receive();
 
-            client.DisplayMessage(decrypted);
+           // if (data.Contains("ERROR")) throw new Exception(data);
+
+           // var decrypted = EncryptionService.Decrypt(data, password);
+
+          //  client.DisplayMessage(decrypted);
         }
         catch (Exception ex)
         {

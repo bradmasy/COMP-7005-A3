@@ -23,6 +23,24 @@ public class Client(string ipAddress, int port)
         if (descriptor <= NoDataSent) throw new Exception("Error sending data");
     }
 
+    public async Task<MemoryStream> ReadAndCreateFileInMemory(string filePath)
+    {
+
+        using var ms = new MemoryStream();
+        using (FileStream file = new(filePath, FileMode.Open, FileAccess.Read))
+        {
+            byte[] bytes = new byte[file.Length];
+
+            await file.ReadAsync(bytes.AsMemory(0, (int)file.Length));
+            string fileContent = System.Text.Encoding.UTF8.GetString(bytes);
+            Console.WriteLine($"Bytes read: {fileContent}");
+
+            ms.Write(bytes, 0, (int)file.Length);
+        }
+
+        return ms;
+
+    }
     public async Task<string> Receive()
     {
         var buffer = new byte[ByteArraySize];
