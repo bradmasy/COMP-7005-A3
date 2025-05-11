@@ -1,0 +1,65 @@
+using System.Net;
+using System.Text.RegularExpressions;
+using static BusinessLogic.Constants;
+
+namespace BusinessLogic;
+
+public static class Validator
+{
+    private static readonly Regex Ipv4Regex = new Regex(
+        @"^(25[0-5]|2[0-4]\d|1\d{2}|[0-9]?\d)" +
+        @"(\.(25[0-5]|2[0-4]\d|1\d{2}|[0-9]?\d)){3}$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant
+    );
+
+    public static void ValidateServerArgs(string[] args)
+    {
+        switch (args.Length)
+        {
+            case NoArgs:
+                throw new Exception("Please provide an IP address and Port number.");
+            case < AmountOfArgs:
+                throw new Exception("Please provide two valid arguments. The IP address and port.");
+            case > AmountOfArgs:
+                throw new Exception("Too many arguments provided.");
+        }
+
+        if (string.IsNullOrEmpty(args[IpAddress]) || string.IsNullOrWhiteSpace(args[IpAddress]))
+        {
+            throw new Exception("Null or empty IP Address provided. Please try again.");
+        }
+
+        if (!Ipv4Regex.IsMatch(args[IpAddress]))
+        {
+            throw new Exception("Invalid IP Address provided. Please try again.");
+        }
+
+
+        if (!int.TryParse(args[Port], out var port) || port < MinPort || port > MaxPort)
+        {
+            throw new ArgumentException("Invalid port number. Please enter a number between 1 and 65535.");
+        }
+    }
+
+
+    public static void ValidateClientArguments(string[] args)
+    {
+        switch (args.Length)
+        {
+            case NoArgs:
+                throw new Exception("no arguments provided.");
+            case < MaxClientArgs:
+                throw new Exception("Invalid number of arguments provided. Please try again.");
+        }
+
+        if (!IPAddress.TryParse(args[IpAddressIndex], out _))
+        {
+            throw new Exception("Invalid IP Address provided. Please try again.");
+        }
+
+        if (!int.TryParse(args[PortIndex], out var port) || port < MinPort || port > MaxPort)
+        {
+            throw new ArgumentException("Invalid port number. Please enter a number between 1 and 65535.");
+        }
+    }
+}
