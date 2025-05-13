@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using BusinessLogic;
 using static BusinessLogic.Constants;
 
 namespace Client;
@@ -15,6 +16,10 @@ public class Client(string ipAddress, int port)
         await Socket.ConnectAsync(endPoint);
     }
 
+    public byte[] EncryptFile(string file, string password)
+    {
+        return EncryptionService.Encrypt(file, password);
+    }
     public async Task Send(byte[] message)
     {
         var descriptor = await Socket.SendAsync(message, SocketFlags.None);
@@ -22,7 +27,7 @@ public class Client(string ipAddress, int port)
         if (descriptor <= NoDataSent) throw new Exception("Error sending data");
     }
 
-    public async Task<MemoryStream> ReadAndCreateFileInMemory(string filePath)
+    public async Task<MemoryStream> ReadAndCreateFileInMemory(string filePath,string password)
     {
 
         using var ms = new MemoryStream();
@@ -31,10 +36,11 @@ public class Client(string ipAddress, int port)
             byte[] bytes = new byte[file.Length];
 
             await file.ReadAsync(bytes.AsMemory(0, (int)file.Length));
-            string fileContent = System.Text.Encoding.UTF8.GetString(bytes);
-            Console.WriteLine($"Bytes read: {fileContent}");
 
-            ms.Write(bytes, 0, (int)file.Length);
+            string fileContent = System.Text.Encoding.UTF8.GetString(bytes);
+            var encryptedBytes = EncryptFile(fileContent,password);
+
+            ms.Write(encryptedBytes, 0, (int)file.Length);
         }
 
         return ms;

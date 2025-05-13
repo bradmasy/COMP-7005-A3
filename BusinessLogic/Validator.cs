@@ -52,12 +52,12 @@ public static class Validator
                 throw new Exception("Invalid number of arguments provided. Please try again.");
         }
 
-        if (!IPAddress.TryParse(args[IpAddressIndex], out _))
+        if (!IPAddress.TryParse(args[IpAddress], out _))
         {
             throw new Exception("Invalid IP Address provided. Please try again.");
         }
 
-        if (!int.TryParse(args[PortIndex], out var port) || port < MinPort || port > MaxPort)
+        if (!int.TryParse(args[Port], out var port) || port < MinPort || port > MaxPort)
         {
             throw new ArgumentException("Invalid port number. Please enter a number between 1 and 65535.");
         }

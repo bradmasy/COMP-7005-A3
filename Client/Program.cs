@@ -14,19 +14,20 @@ class Program
             Validator.ValidateClientArguments(args);
 
             var filePath = args[FilePath];
-            var ipAddress = args[IpAddressIndex];
-            var port = int.Parse(args[PortIndex]);
+            var ipAddress = args[IpAddress];
+            var port = int.Parse(args[Port]);
+            var password = args[EncryptionPassword];
 
             client = new Client(ipAddress, port);
-          //  var fileMemoryStream = await client.ReadAndCreateFileInMemory(filePath);
 
             await client.Connect();
             
-            var fileMemoryStream = await client.ReadAndCreateFileInMemory(filePath);
-            var bytes =fileMemoryStream.ToArray();
+            var fileMemoryStream = await client.ReadAndCreateFileInMemory(filePath, password);
+            var bytes = fileMemoryStream.ToArray();
+          
             await client.Send(bytes);
 
-         //   var data = await client.Receive();
+            var data = await client.Receive();
 
            // if (data.Contains("ERROR")) throw new Exception(data);
 
