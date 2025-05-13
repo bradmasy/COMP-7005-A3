@@ -15,10 +15,9 @@ public class Client(string ipAddress, int port)
         await Socket.ConnectAsync(endPoint);
     }
 
-    public async Task Send(string message, string password)
+    public async Task Send(byte[] message)
     {
-        var bytes = Encoding.ASCII.GetBytes($"{message}|{password}");
-        var descriptor = await Socket.SendAsync(bytes, SocketFlags.None);
+        var descriptor = await Socket.SendAsync(message, SocketFlags.None);
 
         if (descriptor <= NoDataSent) throw new Exception("Error sending data");
     }
