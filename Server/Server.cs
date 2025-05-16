@@ -6,7 +6,7 @@ using static BusinessLogic.Constants;
 
 namespace Server;
 
-public class Server(string ipAddress, int port)
+public class Server(string ipAddress, int port, int delayBeforeSec, int delayAfterSec)
 {
     private const int Timeout = 100000;
     private readonly Socket _serverSocket = new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -27,7 +27,7 @@ public class Server(string ipAddress, int port)
                     var clientSocket = await _serverSocket.AcceptAsync();
                     _clients.Add(clientSocket);
 
-                    Console.WriteLine($"Adding new client: {clientSocket.Handle}");
+                    DisplayMessage($"Adding new client: {clientSocket.Handle}");
                 }
 
                 foreach (var sock in _clients.ToList())
@@ -47,22 +47,28 @@ public class Server(string ipAddress, int port)
         }
     }
 
-    private static byte[] ReceiveAndDecryptedData(byte[] buffer, int size)
+    private async Task<byte[]> ReceiveAndDecryptedData(byte[] buffer, int size)
     {
         var data = Encoding.ASCII.GetString(buffer, 0, size);
+
+        DisplayMessage("About to decrypt message...");
+
+        await AddDelay(delayBeforeSec);
+
         var decryptedFile = DecryptPayloadToData(data);
+
+        await AddDelay(delayAfterSec);
+
+        DisplayMessage("decryption complete after delays...");
+
         return Encoding.ASCII.GetBytes(decryptedFile);
     }
 
     private static string DecryptPayloadToData(string data)
     {
-        var splitData = data.Split("|");
-
-        if (splitData.Length != ExpectedPayload) throw new Exception("Illegal payload. No delimiter found.");
-
+        var splitData = ProcessMessage(data);
         var password = splitData[RawPassword];
         var encryptedFile = splitData[EncryptedFileData];
-
         var decrypted = EncryptionService.Decrypt(encryptedFile, password);
         return decrypted;
     }
@@ -86,18 +92,16 @@ public class Server(string ipAddress, int port)
         {
             var received = await sock.ReceiveAsync(buffer, SocketFlags.None);
 
-            // Close if there is no incoming data
+            // Throw error if no data is received
             if (received == NoDataSent) throw new Exception("No data received");
 
-            var decryptedFileBytes = ReceiveAndDecryptedData(buffer, bufferSize);
+            DisplayMessage($"Connection has received {bufferSize} bytes.");
 
-            await sock.SendAsync(decryptedFileBytes, SocketFlags.None);
+            var decryptedFileBytes = await ReceiveAndDecryptedData(buffer, bufferSize);
 
-            sock.Close();
-            sock.Dispose();
+            DisplayMessage("Sending decrypted data back to client...");
 
-            _clients.Remove(sock);
-            Flush(buffer);
+            await Send(sock, decryptedFileBytes);
         }
         catch (Exception ex)
         {
@@ -107,8 +111,7 @@ public class Server(string ipAddress, int port)
         }
         finally
         {
-            sock.Close();
-            sock.Dispose();
+            EndClientSession(sock);
 
             _clients.Remove(sock);
 
@@ -121,14 +124,10 @@ public class Server(string ipAddress, int port)
         Console.WriteLine(message);
     }
 
-    private static string ConstructSuccess(string message, string encoded)
-    {
-        return $"Message processed | Original: [{message}] Encoded:[{encoded}]";
-    }
-
     private static void EndClientSession(Socket clientSocket)
     {
         clientSocket.Close();
+        clientSocket.Dispose();
     }
 
     private static byte[] CreateErrorMessage(string message)
@@ -160,5 +159,10 @@ public class Server(string ipAddress, int port)
         var endpoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
         _serverSocket.Bind(endpoint);
         _serverSocket.Listen(Connections);
+    }
+
+    private async Task AddDelay(int time)
+    {
+        await Task.Delay(time);
     }
 }

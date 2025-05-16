@@ -16,11 +16,6 @@ public class Client(string ipAddress, int port)
         await Socket.ConnectAsync(endPoint);
     }
 
-    private byte[] EncryptFile(string file, string password)
-    {
-        return EncryptionService.Encrypt(file, password);
-    }
-
     private string EncryptFileToString(string file, string password)
     {
         return EncryptionService.EncryptToString(file, password);
@@ -41,7 +36,7 @@ public class Client(string ipAddress, int port)
 
         var bytes = new byte[file.Length];
 
-        await file.ReadAsync(bytes.AsMemory(0, (int)file.Length));
+        var read = await file.ReadAsync(bytes.AsMemory(0, (int)file.Length));
 
         // return the file as a string
         var fileContent = Encoding.UTF8.GetString(bytes);

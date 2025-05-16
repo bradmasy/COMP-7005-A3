@@ -1,6 +1,6 @@
 namespace BusinessLogic;
 
-public class Constants
+public static class Constants
 {
     public const char Delimiter = '|';
     public const int ByteArraySize = 1024;
