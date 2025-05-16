@@ -26,4 +26,5 @@ public static class Constants
     public const int ConfigurableDelayBefore = 2;
     public const int ConfigurableDelayAfter = 3;
     public const int AmountOfServerArgs = 4;
+    public const int MilliSeconds = 1000;
 }

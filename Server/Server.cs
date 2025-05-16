@@ -163,6 +163,7 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
 
     private async Task AddDelay(int time)
     {
-        await Task.Delay(time);
+        var wait = time * MilliSeconds;
+        await Task.Delay(wait);
     }
 }
