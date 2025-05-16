@@ -66,9 +66,9 @@ public class Client(string ipAddress, int port)
         var numberOfBytesReceived = await Socket.ReceiveAsync(buffer, SocketFlags.None);
 
         if (numberOfBytesReceived <= NoBytes) return string.Empty;
-       
+
         var receivedMessage = Encoding.UTF8.GetString(buffer, 0, numberOfBytesReceived);
-        
+
         return receivedMessage;
     }
 
@@ -86,5 +86,10 @@ public class Client(string ipAddress, int port)
     {
         var payload = Encoding.UTF8.GetBytes($"{password}|{message}");
         return payload;
+    }
+
+    public void IsError(string data)
+    {
+        if (data.Contains(Error)) throw new Exception(data);
     }
 }

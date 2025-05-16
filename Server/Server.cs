@@ -72,15 +72,6 @@ public class Server(string ipAddress, int port)
         _serverSocket.Close();
     }
 
-    private async Task PollClients()
-    {
-        if (_serverSocket.Poll(Timeout, SelectMode.SelectRead))
-        {
-            var clientSocket = await _serverSocket.AcceptAsync();
-            _clients.Add(clientSocket);
-        }
-    }
-
     private static void Flush(byte[] buffer)
     {
         buffer.AsSpan().Clear();
@@ -90,20 +81,39 @@ public class Server(string ipAddress, int port)
     {
         var bufferSize = sock.Available > 0 ? sock.Available : 1024;
         var buffer = new byte[bufferSize];
-        var received = await sock.ReceiveAsync(buffer, SocketFlags.None);
 
-        // Close if there is no incoming data
-        if (received == NoDataSent) throw new Exception("No data received");
+        try
+        {
+            var received = await sock.ReceiveAsync(buffer, SocketFlags.None);
 
-        var decryptedFileBytes = ReceiveAndDecryptedData(buffer, bufferSize);
+            // Close if there is no incoming data
+            if (received == NoDataSent) throw new Exception("No data received");
 
-        await sock.SendAsync(decryptedFileBytes, SocketFlags.None);
+            var decryptedFileBytes = ReceiveAndDecryptedData(buffer, bufferSize);
 
-        sock.Close();
-        sock.Dispose();
+            await sock.SendAsync(decryptedFileBytes, SocketFlags.None);
 
-        _clients.Remove(sock);
-        Flush(buffer);
+            sock.Close();
+            sock.Dispose();
+
+            _clients.Remove(sock);
+            Flush(buffer);
+        }
+        catch (Exception ex)
+        {
+            var errorBytes = CreateErrorMessage(ex.Message);
+
+            await Send(sock, errorBytes);
+        }
+        finally
+        {
+            sock.Close();
+            sock.Dispose();
+
+            _clients.Remove(sock);
+
+            Flush(buffer);
+        }
     }
 
     private static void DisplayMessage(string message)

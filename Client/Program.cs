@@ -21,17 +21,15 @@ class Program
             client = new Client(ipAddress, port);
 
             await client.Connect();
-            
+
             var fileMemoryStream = await client.ReadAndCreateFileInMemory(filePath, password);
             var payload = fileMemoryStream.ToArray();
-          
+
             await client.Send(payload);
 
             var data = await client.Receive();
-            
-           // if (data.Contains("ERROR")) throw new Exception(data);
 
-           // var decrypted = EncryptionService.Decrypt(data, password);
+            client.IsError(data);
 
             client.DisplayMessage(data);
         }

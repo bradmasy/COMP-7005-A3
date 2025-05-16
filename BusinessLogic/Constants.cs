@@ -27,4 +27,5 @@ public class Constants
     public const int ExpectedPayload = 2;
     public const int EncryptedFileData = 1;
     public const int RawPassword = 0;
+    public const string Error = "ERROR";
 }
