@@ -8,7 +8,6 @@ namespace Server;
 
 public class Server(string ipAddress, int port, int delayBeforeSec, int delayAfterSec)
 {
-    private const int Timeout = 100000;
     private readonly Socket _serverSocket = new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
     private readonly List<Socket> _clients = [];
 
@@ -22,7 +21,7 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
 
             while (true)
             {
-                if (_serverSocket.Poll(Timeout, SelectMode.SelectRead))
+                if (_serverSocket.Poll(0, SelectMode.SelectRead))
                 {
                     var clientSocket = await _serverSocket.AcceptAsync();
                     _clients.Add(clientSocket);
