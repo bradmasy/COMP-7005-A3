@@ -12,6 +12,8 @@ class Program
 
             var ipAddress = args[IpAddress];
             var port = int.Parse(args[Port]);
+            var beforeEncryptionDelaySeconds = int.Parse(args[ConfigurableDelayBefore]);
+            var afterEncryptionDelaySeconds = int.Parse( args[ConfigurableDelayAfter]);
 
             var server = new Server(ipAddress, port);
 
