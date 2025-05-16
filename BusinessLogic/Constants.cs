@@ -24,4 +24,7 @@ public class Constants
     public const int MaxClientArgs = 4;
     public const int NoDataSent = 0;
     public const int NoBytes = 0;
+    public const int ExpectedPayload = 2;
+    public const int EncryptedFileData = 1;
+    public const int RawPassword = 0;
 }

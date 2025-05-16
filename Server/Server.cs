@@ -38,20 +38,18 @@ public class Server(string ipAddress, int port)
 
                     if (sock.Poll(0, SelectMode.SelectRead))
                     {
-                        
                         var bufferSize = sock.Available > 0 ? sock.Available : 1024;
 
                         var buffer = new byte[bufferSize];
                         var received = await sock.ReceiveAsync(buffer, SocketFlags.None);
-                        
+
                         // Close if there is no incoming data
-                        if (received == 0) sock.Close();
-            
-                        var fileData = Encoding.ASCII.GetString(buffer, 0, bufferSize);
-                        var decrypted = EncryptionService.Decrypt(fileData, "password");
-                        
-                        Console.WriteLine(fileData);
-                        Console.WriteLine(decrypted);
+                        if (received == NoDataSent) sock.Close();
+
+                        var data = Encoding.ASCII.GetString(buffer, 0, bufferSize);
+                        var decryptedFile = DecryptPayloadToData(data);
+
+                        Console.WriteLine(decryptedFile);
                         // open file / create a file
 
 
@@ -65,6 +63,19 @@ public class Server(string ipAddress, int port)
         {
             Console.WriteLine(ex.Message);
         }
+    }
+
+    private static string DecryptPayloadToData(string data)
+    {
+        var splitData = data.Split("|");
+
+        if (splitData.Length != ExpectedPayload) throw new Exception("Illegal payload. No delimiter found.");
+
+        var password = splitData[RawPassword];
+        var encryptedFile = splitData[EncryptedFileData];
+
+        var decrypted = EncryptionService.Decrypt(encryptedFile, password);
+        return decrypted;
     }
 
     public void TearDown()
