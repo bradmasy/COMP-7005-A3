@@ -16,10 +16,11 @@ public class Client(string ipAddress, int port)
         await Socket.ConnectAsync(endPoint);
     }
 
-    public byte[] EncryptFile(string file, string password)
+    private byte[] EncryptFile(string file, string password)
     {
         return EncryptionService.Encrypt(file, password);
     }
+
     public async Task Send(byte[] message)
     {
         var descriptor = await Socket.SendAsync(message, SocketFlags.None);
@@ -27,25 +28,24 @@ public class Client(string ipAddress, int port)
         if (descriptor <= NoDataSent) throw new Exception("Error sending data");
     }
 
-    public async Task<MemoryStream> ReadAndCreateFileInMemory(string filePath,string password)
+    public async Task<MemoryStream> ReadAndCreateFileInMemory(string filePath, string password)
     {
+        var ms = new MemoryStream();
 
-        using var ms = new MemoryStream();
-        using (FileStream file = new(filePath, FileMode.Open, FileAccess.Read))
-        {
-            byte[] bytes = new byte[file.Length];
+        await using FileStream file = new(filePath, FileMode.Open, FileAccess.Read);
 
-            await file.ReadAsync(bytes.AsMemory(0, (int)file.Length));
+        var bytes = new byte[file.Length];
+        
+        await file.ReadAsync(bytes.AsMemory(0, (int)file.Length));
 
-            string fileContent = System.Text.Encoding.UTF8.GetString(bytes);
-            var encryptedBytes = EncryptFile(fileContent,password);
+        var fileContent = System.Text.Encoding.UTF8.GetString(bytes);
+        var encryptedBytes = EncryptFile(fileContent, password);
 
-            ms.Write(encryptedBytes, 0, (int)file.Length);
-        }
+        ms.Write(encryptedBytes, 0, (int)file.Length);
 
         return ms;
-
     }
+
     public async Task<string> Receive()
     {
         var buffer = new byte[ByteArraySize];

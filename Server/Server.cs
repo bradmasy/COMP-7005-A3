@@ -27,22 +27,35 @@ public class Server(string ipAddress, int port)
                 {
                     var clientSocket = await _serverSocket.AcceptAsync();
                     _clients.Add(clientSocket);
+                    Console.WriteLine("Adding socket to clients");
                 }
-                
-                foreach (var clientSocket in _clients)
+
+                foreach (var sock in _clients)
                 {
+                    // check if closed
                     // if the client socket is ready to read, follow with the processing...
                     // tip: this could be where a new thread executes the processing after the poll...
-                    if (clientSocket.Poll(0, SelectMode.SelectRead))
+
+                    if (sock.Poll(0, SelectMode.SelectRead))
                     {
-                        var bufferSize = clientSocket.Available > 0 ? clientSocket.Available : 1024;
+                        
+                        var bufferSize = sock.Available > 0 ? sock.Available : 1024;
+
                         var buffer = new byte[bufferSize];
-                        var received = await clientSocket.ReceiveAsync(Buffer, SocketFlags.None);
+                        var received = await sock.ReceiveAsync(buffer, SocketFlags.None);
                         
-                        if(received == 0) clientSocket.Close();
+                        // Close if there is no incoming data
+                        if (received == 0) sock.Close();
+            
+                        var fileData = Encoding.ASCII.GetString(buffer, 0, bufferSize);
                         
-                        var message = Encoding.ASCII.GetString(buffer, 0, received);
-                        // open file
+                        var decrypted = EncryptionService.Decrypt(fileData, "password");
+                        
+                        Console.WriteLine(fileData);
+                        Console.WriteLine(decrypted);
+                        // open file / create a file
+
+
                         // process file
                         // return results
                     }
@@ -54,7 +67,7 @@ public class Server(string ipAddress, int port)
             Console.WriteLine(ex.Message);
         }
     }
-    
+
     public void TearDown()
     {
         _serverSocket.Close();
@@ -68,11 +81,12 @@ public class Server(string ipAddress, int port)
             _clients.Add(clientSocket);
         }
     }
+
     private static void Flush()
     {
         Buffer.AsSpan().Clear();
     }
-    
+
     private static async Task HandleClient(Socket clientSocket)
     {
         Console.WriteLine("Client connected");
