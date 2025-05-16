@@ -48,7 +48,6 @@ public class Server(string ipAddress, int port)
                         if (received == 0) sock.Close();
             
                         var fileData = Encoding.ASCII.GetString(buffer, 0, bufferSize);
-                        
                         var decrypted = EncryptionService.Decrypt(fileData, "password");
                         
                         Console.WriteLine(fileData);

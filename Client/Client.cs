@@ -21,6 +21,11 @@ public class Client(string ipAddress, int port)
         return EncryptionService.Encrypt(file, password);
     }
 
+    private string EncryptFileToString(string file, string password)
+    {
+        return EncryptionService.EncryptToString(file, password);
+    }
+
     public async Task Send(byte[] message)
     {
         var descriptor = await Socket.SendAsync(message, SocketFlags.None);
@@ -35,13 +40,22 @@ public class Client(string ipAddress, int port)
         await using FileStream file = new(filePath, FileMode.Open, FileAccess.Read);
 
         var bytes = new byte[file.Length];
-        
+
         await file.ReadAsync(bytes.AsMemory(0, (int)file.Length));
 
-        var fileContent = System.Text.Encoding.UTF8.GetString(bytes);
-        var encryptedBytes = EncryptFile(fileContent, password);
+        // return the file as a string
+        var fileContent = Encoding.UTF8.GetString(bytes);
 
-        ms.Write(encryptedBytes, 0, (int)file.Length);
+        // encrypt just the file
+        var encryptedFileStr = EncryptFileToString(fileContent, password);
+
+        // attach the password not encrypted to decrypt file on server side
+        var payload = $"{password}:{encryptedFileStr}";
+
+        // convert payload to bytes
+        var convertedToBytes = Encoding.UTF8.GetBytes(payload);
+
+        ms.Write(convertedToBytes, 0, (int)file.Length);
 
         return ms;
     }
@@ -64,5 +78,11 @@ public class Client(string ipAddress, int port)
     public void DisplayMessage(string message)
     {
         Console.WriteLine($"The Decrypted Message is: \"{message}\"");
+    }
+
+    public byte[] CreatePayload(string message, string password)
+    {
+        var payload = Encoding.UTF8.GetBytes($"{password}|{message}");
+        return payload;
     }
 }

@@ -23,9 +23,9 @@ class Program
             await client.Connect();
             
             var fileMemoryStream = await client.ReadAndCreateFileInMemory(filePath, password);
-            var bytes = fileMemoryStream.ToArray();
+            var payload = fileMemoryStream.ToArray();
           
-            await client.Send(bytes);
+            await client.Send(payload);
 
             var data = await client.Receive();
 

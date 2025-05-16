@@ -11,6 +11,11 @@ public static class EncryptionService
         return Encoding.UTF8.GetBytes(encrypted);
     }
 
+    public static string EncryptToString(string data, string password)
+    {
+        return VigenereCipher(data, password);
+    }
+
     private static string VigenereCipher(string message, string password)
     {
         var builder = new StringBuilder();
