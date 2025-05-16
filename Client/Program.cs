@@ -28,12 +28,12 @@ class Program
             await client.Send(payload);
 
             var data = await client.Receive();
-
+            
            // if (data.Contains("ERROR")) throw new Exception(data);
 
            // var decrypted = EncryptionService.Decrypt(data, password);
 
-          //  client.DisplayMessage(decrypted);
+            client.DisplayMessage(data);
         }
         catch (Exception ex)
         {

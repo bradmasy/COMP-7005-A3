@@ -55,7 +55,7 @@ public class Client(string ipAddress, int port)
         // convert payload to bytes
         var convertedToBytes = Encoding.UTF8.GetBytes(payload);
 
-        ms.Write(convertedToBytes, 0, (int)file.Length + password.Length + 1);
+        ms.Write(convertedToBytes, 0, convertedToBytes.Length);
 
         return ms;
     }
@@ -66,7 +66,9 @@ public class Client(string ipAddress, int port)
         var numberOfBytesReceived = await Socket.ReceiveAsync(buffer, SocketFlags.None);
 
         if (numberOfBytesReceived <= NoBytes) return string.Empty;
+       
         var receivedMessage = Encoding.UTF8.GetString(buffer, 0, numberOfBytesReceived);
+        
         return receivedMessage;
     }
 

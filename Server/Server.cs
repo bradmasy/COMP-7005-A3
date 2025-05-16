@@ -9,7 +9,6 @@ namespace Server;
 public class Server(string ipAddress, int port)
 {
     private const int Timeout = 100000;
-    private static readonly byte[] Buffer = new byte[ByteArraySize];
     private readonly Socket _serverSocket = new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
     private readonly List<Socket> _clients = [];
 
@@ -27,36 +26,18 @@ public class Server(string ipAddress, int port)
                 {
                     var clientSocket = await _serverSocket.AcceptAsync();
                     _clients.Add(clientSocket);
-                    Console.WriteLine("Adding socket to clients");
+
+                    Console.WriteLine($"Adding new client: {clientSocket.Handle}");
                 }
 
-                foreach (var sock in _clients)
+                foreach (var sock in _clients.ToList())
                 {
-                    // check if closed
-                    // if the client socket is ready to read, follow with the processing...
+                    // If the read event is not ready, skip
                     // tip: this could be where a new thread executes the processing after the poll...
 
-                    if (sock.Poll(0, SelectMode.SelectRead))
-                    {
-                        var bufferSize = sock.Available > 0 ? sock.Available : 1024;
-                        Console.WriteLine($"Received {bufferSize} bytes from {sock.RemoteEndPoint}");
-                        var buffer = new byte[bufferSize];
-                        var received = await sock.ReceiveAsync(buffer, SocketFlags.None);
+                    if (!sock.Poll(0, SelectMode.SelectRead)) continue;
 
-                        // Close if there is no incoming data
-                        if (received == NoDataSent) sock.Close();
-
-                        var data = Encoding.ASCII.GetString(buffer, 0, bufferSize);
-                        Console.WriteLine(data);
-                        var decryptedFile = DecryptPayloadToData(data);
-
-                        Console.WriteLine(decryptedFile);
-                        // open file / create a file
-
-
-                        // process file
-                        // return results
-                    }
+                    await HandleClient(sock);
                 }
             }
         }
@@ -64,6 +45,13 @@ public class Server(string ipAddress, int port)
         {
             Console.WriteLine(ex.Message);
         }
+    }
+
+    private static byte[] ReceiveAndDecryptedData(byte[] buffer, int size)
+    {
+        var data = Encoding.ASCII.GetString(buffer, 0, size);
+        var decryptedFile = DecryptPayloadToData(data);
+        return Encoding.ASCII.GetBytes(decryptedFile);
     }
 
     private static string DecryptPayloadToData(string data)
@@ -93,36 +81,29 @@ public class Server(string ipAddress, int port)
         }
     }
 
-    private static void Flush()
+    private static void Flush(byte[] buffer)
     {
-        Buffer.AsSpan().Clear();
+        buffer.AsSpan().Clear();
     }
 
-    private static async Task HandleClient(Socket clientSocket)
+    private async Task HandleClient(Socket sock)
     {
-        Console.WriteLine("Client connected");
-        try
-        {
-            var message = await Receive(clientSocket);
-            var processed = ProcessMessage(message);
-            var encoded = EncryptionService.Encrypt(processed[Message], processed[Password]);
+        var bufferSize = sock.Available > 0 ? sock.Available : 1024;
+        var buffer = new byte[bufferSize];
+        var received = await sock.ReceiveAsync(buffer, SocketFlags.None);
 
-            await Send(clientSocket, encoded);
+        // Close if there is no incoming data
+        if (received == NoDataSent) throw new Exception("No data received");
 
-            var success = ConstructSuccess(processed[Message], Encoding.ASCII.GetString(encoded));
-            DisplayMessage(success);
-        }
-        catch (Exception ex)
-        {
-            var errorResponse = CreateErrorMessage(ex.Message);
-            await Send(clientSocket, errorResponse);
-            DisplayMessage(ex.Message);
-        }
-        finally
-        {
-            EndClientSession(clientSocket);
-            Flush();
-        }
+        var decryptedFileBytes = ReceiveAndDecryptedData(buffer, bufferSize);
+
+        await sock.SendAsync(decryptedFileBytes, SocketFlags.None);
+
+        sock.Close();
+        sock.Dispose();
+
+        _clients.Remove(sock);
+        Flush(buffer);
     }
 
     private static void DisplayMessage(string message)
@@ -169,16 +150,5 @@ public class Server(string ipAddress, int port)
         var endpoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
         _serverSocket.Bind(endpoint);
         _serverSocket.Listen(Connections);
-    }
-
-    private static async Task<string> Receive(Socket client)
-    {
-        var received = await client.ReceiveAsync(Buffer, SocketFlags.None);
-        if (received == 0)
-        {
-            throw new Exception("Client disconnected unexpectedly");
-        }
-
-        return Encoding.UTF8.GetString(Buffer, 0, received);
     }
 }
