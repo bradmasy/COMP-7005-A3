@@ -39,7 +39,7 @@ public class Server(string ipAddress, int port)
                     if (sock.Poll(0, SelectMode.SelectRead))
                     {
                         var bufferSize = sock.Available > 0 ? sock.Available : 1024;
-
+                        Console.WriteLine($"Received {bufferSize} bytes from {sock.RemoteEndPoint}");
                         var buffer = new byte[bufferSize];
                         var received = await sock.ReceiveAsync(buffer, SocketFlags.None);
 
@@ -47,6 +47,7 @@ public class Server(string ipAddress, int port)
                         if (received == NoDataSent) sock.Close();
 
                         var data = Encoding.ASCII.GetString(buffer, 0, bufferSize);
+                        Console.WriteLine(data);
                         var decryptedFile = DecryptPayloadToData(data);
 
                         Console.WriteLine(decryptedFile);

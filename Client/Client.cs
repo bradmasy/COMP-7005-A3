@@ -50,12 +50,12 @@ public class Client(string ipAddress, int port)
         var encryptedFileStr = EncryptFileToString(fileContent, password);
 
         // attach the password not encrypted to decrypt file on server side
-        var payload = $"{password}:{encryptedFileStr}";
+        var payload = $"{password}|{encryptedFileStr}";
 
         // convert payload to bytes
         var convertedToBytes = Encoding.UTF8.GetBytes(payload);
 
-        ms.Write(convertedToBytes, 0, (int)file.Length);
+        ms.Write(convertedToBytes, 0, (int)file.Length + password.Length + 1);
 
         return ms;
     }
