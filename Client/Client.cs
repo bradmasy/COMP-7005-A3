@@ -76,13 +76,7 @@ public class Client(string ipAddress, int port)
     {
         Console.WriteLine($"The Decrypted Message is:\n{message}");
     }
-
-    public byte[] CreatePayload(string message, string password)
-    {
-        var payload = Encoding.UTF8.GetBytes($"{password}|{message}");
-        return payload;
-    }
-
+    
     public void IsError(string data)
     {
         if (data.Contains(Error)) throw new Exception(data);
