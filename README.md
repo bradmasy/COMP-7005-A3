@@ -90,3 +90,62 @@ The project uses the following technologies and features:
 - .NET 8.0
 - Nullable reference types
 - Implicit using directives
+
+## Testing Instructions
+
+### Testing Multiple Clients (Multiplexing)
+
+To test the server's multiplexing capabilities, you can run multiple clients simultaneously. Here are the commands for different operating systems:
+
+#### For Unix/Mac (using terminal):
+```bash
+# Run 4 clients simultaneously
+./Client/bin/Debug/net8.0/Client test_files/short_poem.txt 127.0.0.1 8080 password1 &
+./Client/bin/Debug/net8.0/Client test_files/tech_story.txt 127.0.0.1 8080 password2 &
+./Client/bin/Debug/net8.0/Client test_files/special_chars.txt 127.0.0.1 8080 password3 &
+./Client/bin/Debug/net8.0/Client test_files/large_file.txt 127.0.0.1 8080 password4 &
+```
+
+#### For Windows (using Command Prompt):
+```batch
+@echo off
+start Client\bin\Debug\net8.0\Client.exe test_files\short_poem.txt 127.0.0.1 8080 password1
+start Client\bin\Debug\net8.0\Client.exe test_files\tech_story.txt 127.0.0.1 8080 password2
+start Client\bin\Debug\net8.0\Client.exe test_files\special_chars.txt 127.0.0.1 8080 password3
+start Client\bin\Debug\net8.0\Client.exe test_files\large_file.txt 127.0.0.1 8080 password4
+```
+
+#### Alternative Method (Using Multiple Terminal Windows):
+1. Start the server in one terminal window
+2. Open 4 additional terminal windows
+3. Run a different client in each window:
+   ```bash
+   # Terminal 1
+   ./Client/bin/Debug/net8.0/Client test_files/short_poem.txt 127.0.0.1 8080 password1
+
+   # Terminal 2
+   ./Client/bin/Debug/net8.0/Client test_files/tech_story.txt 127.0.0.1 8080 password2
+
+   # Terminal 3
+   ./Client/bin/Debug/net8.0/Client test_files/special_chars.txt 127.0.0.1 8080 password3
+
+   # Terminal 4
+   ./Client/bin/Debug/net8.0/Client test_files/large_file.txt 127.0.0.1 8080 password4
+   ```
+
+### Expected Behavior
+When running multiple clients simultaneously:
+1. All clients will connect to the server quickly
+2. The server will add all clients to its connection list
+3. The server will process each client's request sequentially
+4. Each client will receive its decrypted file back
+
+Note: The server processes clients one at a time, so if each request takes 5 seconds, 4 clients will take approximately 20 seconds total to process.
+
+### Test Files
+The `test_files` directory contains several test files for different scenarios:
+- `short_poem.txt`: Small file for basic testing
+- `tech_story.txt`: Medium-sized file for testing
+- `large_file.txt`: Large file with repeated content
+- `empty_file.txt`: Empty file for edge case testing
+- `special_chars.txt`: File with special characters and Unicode

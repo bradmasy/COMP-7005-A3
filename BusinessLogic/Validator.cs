@@ -19,7 +19,7 @@ public static class Validator
             case NoArgs:
                 throw new Exception("Please provide an IP address and Port number.");
             case < AmountOfServerArgs:
-                throw new Exception("Please provide two valid arguments. The IP address and port.");
+                throw new Exception("Please provide four valid arguments. The IP address, port, delay before and after encryption.");
             case > AmountOfServerArgs:
                 throw new Exception("Too many arguments provided.");
         }
@@ -40,15 +40,16 @@ public static class Validator
             throw new ArgumentException("Invalid port number. Please enter a number between 1 and 65535.");
         }
         
-        if (!int.TryParse(args[Port], out var delayBeforeSeconds) || delayBeforeSeconds < MinPort || delayBeforeSeconds > MaxPort)
+        if (!int.TryParse(args[ConfigurableDelayBefore], out var delayBeforeSeconds))
         {
-            throw new ArgumentException("Invalid port number. Please enter a number between 1 and 65535.");
+            throw new ArgumentException("Invalid number. Please enter a valid integer for the delay before.");
         }
-        
-        if (!int.TryParse(args[Port], out var delayAfterSeconds) || delayAfterSeconds < MinPort || delayAfterSeconds > MaxPort)
+
+        if (!int.TryParse(args[ConfigurableDelayAfter], out var delayAfterSeconds))
         {
-            throw new ArgumentException("Invalid port number. Please enter a number between 1 and 65535.");
+            throw new ArgumentException("Invalid number. Please enter a valid integer for the delay after.");
         }
+
     }
 
 
