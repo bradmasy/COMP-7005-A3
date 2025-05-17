@@ -17,7 +17,7 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
         {
             BindAndListen();
 
-            Console.WriteLine($"Server is bound to socket: {_serverSocket.LocalEndPoint}");
+            DisplayMessage($"Server is bound to socket: {_serverSocket.LocalEndPoint}");
 
             while (true)
             {
@@ -35,7 +35,6 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
                     // tip: this could be where a new thread executes the processing after the poll...
                     if (sock.Poll(0, SelectMode.SelectRead))
                     {
-
                         await HandleClient(sock);
                     }
                 }
@@ -49,14 +48,14 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
 
     private async Task<byte[]> ReceiveAndDecryptedData(byte[] buffer, int size)
     {
-        var data = Encoding.ASCII.GetString(buffer, 0, size);
+        var data = Encoding.ASCII.GetString(buffer, 0, buffer.Length);
 
         DisplayMessage("About to decrypt message...");
 
         await AddDelay(delayBeforeSec);
 
         var decryptedFile = DecryptPayloadToData(data);
-        Console.WriteLine($"Decrypted file: {decryptedFile}");
+
         await AddDelay(delayAfterSec);
 
         DisplayMessage("decryption complete after delays...");
@@ -83,26 +82,60 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
         buffer.AsSpan().Clear();
     }
 
+    private async Task<byte[]> ReadIncomingDataStream(Socket sock)
+    {
+        const int bufferSize = 1024; // 1KB buffer
+
+        var buffer = new byte[bufferSize];
+        var chunks = new List<byte[]>();
+        var totalBytesReceived = 0;
+
+        while (true)
+        {
+            var received = await sock.ReceiveAsync(buffer, SocketFlags.None);
+
+            if (received == 0) break; // Connection closed by client
+
+            var chunk = new byte[received];
+            Array.Copy(buffer, chunk, received);
+            chunks.Add(chunk);
+            totalBytesReceived += received;
+
+            // If we received less than the buffer size, we've got all the data
+            if (received < bufferSize) break;
+        }
+
+        if (totalBytesReceived == NoDataSent) throw new Exception("No data received");
+
+        var completeData = new byte[totalBytesReceived];
+        var offset = 0;
+
+        foreach (var chunk in chunks)
+        {
+            Array.Copy(chunk, 0, completeData, offset, chunk.Length);
+            offset += chunk.Length;
+        }
+
+        return completeData;
+    }
     private async Task HandleClient(Socket sock)
     {
         var bufferSize = sock.Available > 0 ? sock.Available : 1024;
-        Console.WriteLine($"Buffer size: {bufferSize}");
+
         var buffer = new byte[bufferSize];
 
         try
         {
-            var received = await sock.ReceiveAsync(buffer, SocketFlags.None);
+            var received = await ReadIncomingDataStream(sock); //await sock.ReceiveAsync(buffer, SocketFlags.None);
 
-            // Throw error if no data is received
-            if (received == NoDataSent) throw new Exception("No data received");
+            DisplayMessage($"Connection has received {received.Length} bytes.");
 
-            DisplayMessage($"Connection has received {bufferSize} bytes.");
-
-            var decryptedFileBytes = await ReceiveAndDecryptedData(buffer, bufferSize);
+            var decryptedFileBytes = await ReceiveAndDecryptedData(received, bufferSize);
 
             DisplayMessage("Sending decrypted data back to client...");
 
             await Send(sock, decryptedFileBytes);
+        
         }
         catch (Exception ex)
         {
@@ -112,8 +145,11 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
         }
         finally
         {
-            EndClientSession(sock);
-
+            if (sock.Connected)
+            {
+                Console.WriteLine("Closing socket");
+                EndClientSession(sock);
+            }
             _clients.Remove(sock);
 
             Flush(buffer);
@@ -136,15 +172,30 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
         return Encoding.ASCII.GetBytes($"ERROR: {message}");
     }
 
+    // private static async Task Send(Socket client, byte[] data)
+    // {
+    //     Console.WriteLine($"Sending data to client...{data.Length}");
+    //     var descriptor = await client.SendAsync(data, SocketFlags.None);
+    //     if (descriptor <= 0)
+    //     {
+    //         throw new Exception("Error transmitting message to client.");
+    //     }
+    // }
+
     private static async Task Send(Socket client, byte[] data)
     {
-        var descriptor = await client.SendAsync(data, SocketFlags.None);
-        if (descriptor <= 0)
+        Console.WriteLine($"Sending data to client...{data.Length}");
+        int totalSent = 0;
+        while (totalSent < data.Length)
         {
-            throw new Exception("Error transmitting message to client.");
+            int sent = await client.SendAsync(data.AsMemory(totalSent), SocketFlags.None);
+            if (sent <= 0)
+            {
+                throw new Exception("Error transmitting message to client.");
+            }
+            totalSent += sent;
         }
     }
-
     private static string[] ProcessMessage(string message)
     {
         var messageParts = message.Split(Delimiter);

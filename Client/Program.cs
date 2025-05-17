@@ -31,7 +31,9 @@ class Program
 
             client.IsError(data);
 
-            client.DisplayMessage(data);
+           client.DisplayMessage(data);
+
+       //    client.Teardown();
         }
         catch (Exception ex)
         {
