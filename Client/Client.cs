@@ -74,7 +74,7 @@ public class Client(string ipAddress, int port)
 
     public void DisplayMessage(string message)
     {
-        Console.WriteLine($"The Decrypted Message is: \"{message}\"");
+        Console.WriteLine($"The Decrypted Message is:\n{message}");
     }
     
     public void IsError(string data)
