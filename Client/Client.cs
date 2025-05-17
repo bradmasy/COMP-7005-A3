@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using BusinessLogic;
+using Microsoft.VisualBasic;
 using static BusinessLogic.Constants;
 
 namespace Client;
@@ -39,7 +40,7 @@ public class Client(string ipAddress, int port)
         var read = await file.ReadAsync(bytes.AsMemory(0, (int)file.Length));
 
         // return the file as a string
-        var fileContent = Encoding.UTF8.GetString(bytes);
+        var fileContent = Encoding.ASCII.GetString(bytes);
 
         // encrypt just the file
         var encryptedFileStr = EncryptFileToString(fileContent, password);
@@ -48,7 +49,7 @@ public class Client(string ipAddress, int port)
         var payload = $"{password}|{encryptedFileStr}";
 
         // convert payload to bytes
-        var convertedToBytes = Encoding.UTF8.GetBytes(payload);
+        var convertedToBytes = Encoding.ASCII.GetBytes(payload);
 
         ms.Write(convertedToBytes, 0, convertedToBytes.Length);
 
@@ -57,12 +58,20 @@ public class Client(string ipAddress, int port)
 
     public async Task<string> Receive()
     {
-        var buffer = new byte[ByteArraySize];
+        var availableBytes = NoBytes;
+
+        // keep polling the socket until we know how many bytes are available
+        while (availableBytes <= NoBytes)
+        {
+            availableBytes = Socket.Available;
+        }
+
+        var buffer = new byte[availableBytes];
         var numberOfBytesReceived = await Socket.ReceiveAsync(buffer, SocketFlags.None);
 
         if (numberOfBytesReceived <= NoBytes) return string.Empty;
 
-        var receivedMessage = Encoding.UTF8.GetString(buffer, 0, numberOfBytesReceived);
+        var receivedMessage = Encoding.ASCII.GetString(buffer, 0, numberOfBytesReceived);
 
         return receivedMessage;
     }
@@ -76,7 +85,7 @@ public class Client(string ipAddress, int port)
     {
         Console.WriteLine($"The Decrypted Message is:\n{message}");
     }
-    
+
     public void IsError(string data)
     {
         if (data.Contains(Error)) throw new Exception(data);

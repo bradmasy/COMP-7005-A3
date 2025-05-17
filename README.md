@@ -99,7 +99,7 @@ To test the server's multiplexing capabilities, you can run multiple clients sim
 
 #### For Unix/Mac (using terminal):
 ```bash
-# Run 4 clients simultaneously
+# Run 4 clients simultaneously using & operator
 ./Client/bin/Debug/net8.0/Client test_files/short_poem.txt 127.0.0.1 8080 password1 &
 ./Client/bin/Debug/net8.0/Client test_files/tech_story.txt 127.0.0.1 8080 password2 &
 ./Client/bin/Debug/net8.0/Client test_files/special_chars.txt 127.0.0.1 8080 password3 &
@@ -108,12 +108,14 @@ To test the server's multiplexing capabilities, you can run multiple clients sim
 
 #### For Windows (using Command Prompt):
 ```batch
-@echo off
+# Run 4 clients simultaneously using start command
 start Client\bin\Debug\net8.0\Client.exe test_files\short_poem.txt 127.0.0.1 8080 password1
 start Client\bin\Debug\net8.0\Client.exe test_files\tech_story.txt 127.0.0.1 8080 password2
 start Client\bin\Debug\net8.0\Client.exe test_files\special_chars.txt 127.0.0.1 8080 password3
 start Client\bin\Debug\net8.0\Client.exe test_files\large_file.txt 127.0.0.1 8080 password4
 ```
+
+Note: Do NOT use `&&` in Windows as it runs commands sequentially, not simultaneously.
 
 #### Alternative Method (Using Multiple Terminal Windows):
 1. Start the server in one terminal window

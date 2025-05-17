@@ -33,10 +33,11 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
                 {
                     // If the read event is not ready, skip
                     // tip: this could be where a new thread executes the processing after the poll...
+                    if (sock.Poll(0, SelectMode.SelectRead))
+                    {
 
-                    if (!sock.Poll(0, SelectMode.SelectRead)) continue;
-
-                    await HandleClient(sock);
+                        await HandleClient(sock);
+                    }
                 }
             }
         }
@@ -55,7 +56,7 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
         await AddDelay(delayBeforeSec);
 
         var decryptedFile = DecryptPayloadToData(data);
-
+        Console.WriteLine($"Decrypted file: {decryptedFile}");
         await AddDelay(delayAfterSec);
 
         DisplayMessage("decryption complete after delays...");
@@ -85,6 +86,7 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
     private async Task HandleClient(Socket sock)
     {
         var bufferSize = sock.Available > 0 ? sock.Available : 1024;
+        Console.WriteLine($"Buffer size: {bufferSize}");
         var buffer = new byte[bufferSize];
 
         try
@@ -131,7 +133,7 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
 
     private static byte[] CreateErrorMessage(string message)
     {
-        return Encoding.UTF8.GetBytes($"ERROR: {message}");
+        return Encoding.ASCII.GetBytes($"ERROR: {message}");
     }
 
     private static async Task Send(Socket client, byte[] data)
