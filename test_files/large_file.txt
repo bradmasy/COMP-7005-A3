@@ -1,0 +1,67 @@
+# Large Test File
+# This file contains repeated content to test large file handling capabilities
+
+[REPEAT START]
+The quick brown fox jumps over the lazy dog.
+The quick brown fox jumps over the lazy dog.
+The quick brown fox jumps over the lazy dog.
+The quick brown fox jumps over the lazy dog.
+The quick brown fox jumps over the lazy dog.
+The quick brown fox jumps over the lazy dog.
+The quick brown fox jumps over the lazy dog.
+The quick brown fox jumps over the lazy dog.
+The quick brown fox jumps over the lazy dog.
+The quick brown fox jumps over the lazy dog.
+[REPEAT END]
+
+[REPEAT START]
+Pack my box with five dozen liquor jugs.
+Pack my box with five dozen liquor jugs.
+Pack my box with five dozen liquor jugs.
+Pack my box with five dozen liquor jugs.
+Pack my box with five dozen liquor jugs.
+Pack my box with five dozen liquor jugs.
+Pack my box with five dozen liquor jugs.
+Pack my box with five dozen liquor jugs.
+Pack my box with five dozen liquor jugs.
+Pack my box with five dozen liquor jugs.
+[REPEAT END]
+
+[REPEAT START]
+How vexingly quick daft zebras jump!
+How vexingly quick daft zebras jump!
+How vexingly quick daft zebras jump!
+How vexingly quick daft zebras jump!
+How vexingly quick daft zebras jump!
+How vexingly quick daft zebras jump!
+How vexingly quick daft zebras jump!
+How vexingly quick daft zebras jump!
+How vexingly quick daft zebras jump!
+How vexingly quick daft zebras jump!
+[REPEAT END]
+
+[REPEAT START]
+Sphinx of black quartz, judge my vow.
+Sphinx of black quartz, judge my vow.
+Sphinx of black quartz, judge my vow.
+Sphinx of black quartz, judge my vow.
+Sphinx of black quartz, judge my vow.
+Sphinx of black quartz, judge my vow.
+Sphinx of black quartz, judge my vow.
+Sphinx of black quartz, judge my vow.
+Sphinx of black quartz, judge my vow.
+Sphinx of black quartz, judge my vow.
+[REPEAT END]
+
+[REPEAT START]
+Crazy Fredrick bought many very exquisite opal jewels.
+Crazy Fredrick bought many very exquisite opal jewels.
+Crazy Fredrick bought many very exquisite opal jewels.
+Crazy Fredrick bought many very exquisite opal jewels.
+Crazy Fredrick bought many very exquisite opal jewels.
+Crazy Fredrick bought many very exquisite opal jewels.
+Crazy Fredrick bought many very exquisite opal jewels.
+Crazy Fredrick bought many very exquisite opal jewels.
+Crazy Fredrick bought many very exquisite opal jewels.
+Crazy Fredrick bought many very exquisite opal jewels.
+[REPEAT END] 
