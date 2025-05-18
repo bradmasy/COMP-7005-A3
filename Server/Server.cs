@@ -40,7 +40,7 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            DisplayMessage(ex.Message);
         }
     }
 
@@ -91,6 +91,13 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
         }
 
         var totalLength = BitConverter.ToInt64(lengthBuffer, 0);
+
+        if (totalLength is <= 0 or > int.MaxValue)
+        {
+            throw new Exception(
+                $"Invalid data length: {totalLength} bytes. Maximum allowed size is {int.MaxValue} bytes");
+        }
+
         var dataBuffer = new byte[totalLength];
 
         var totalBytesReceived = 0;
@@ -113,18 +120,12 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
 
     private async Task HandleClient(Socket sock)
     {
-        var bufferSize = sock.Available > 0 ? sock.Available : 1024;
-
-        var buffer = new byte[bufferSize];
-
         try
         {
-            var received = await ReadIncomingDataStream(sock); //await sock.ReceiveAsync(buffer, SocketFlags.None);
-
+            var received = await ReadIncomingDataStream(sock);
             DisplayMessage($"Connection has received {received.Length} bytes.");
 
-            var decryptedFileBytes = await ReceiveAndDecryptedData(received, bufferSize);
-
+            var decryptedFileBytes = await ReceiveAndDecryptedData(received, received.Length);
             DisplayMessage("Sending decrypted data back to client...");
 
             await Send(sock, decryptedFileBytes);
@@ -132,15 +133,17 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
         catch (Exception ex)
         {
             var errorBytes = CreateErrorMessage(ex.Message);
-
             await Send(sock, errorBytes);
         }
         finally
         {
-            EndClientSession(sock);
-            _clients.Remove(sock);
+            if (sock.Connected)
+            {
+                DisplayMessage("Closing socket");
+                EndClientSession(sock);
+            }
 
-            Flush(buffer);
+            _clients.Remove(sock);
         }
     }
 
@@ -179,7 +182,7 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
     private static string[] ProcessMessage(string message)
     {
         var messageParts = message.Split(Delimiter);
-        if (messageParts.Length < ExpectedMessages) throw new Exception($"Invalid message: {message}");
+        if (messageParts.Length < ExpectedMessages) throw new Exception($"Invalid message");
         return messageParts;
     }
 
