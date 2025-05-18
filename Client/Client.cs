@@ -24,9 +24,13 @@ public class Client(string ipAddress, int port)
 
     public async Task Send(byte[] message)
     {
-        Console.WriteLine($"Sending {message.Length} bytes");
-        var descriptor = await Socket.SendAsync(message, SocketFlags.None);
+        // Send the length as a long (8 bytes)
+        var lengthBytes = BitConverter.GetBytes((long)message.Length);
 
+        await Socket.SendAsync(lengthBytes, SocketFlags.None);
+
+        // Send the actual data
+        var descriptor = await Socket.SendAsync(message, SocketFlags.None);
         if (descriptor <= NoDataSent) throw new Exception("Error sending data");
     }
 
@@ -39,57 +43,49 @@ public class Client(string ipAddress, int port)
         var bytes = new byte[file.Length];
 
         var read = await file.ReadAsync(bytes.AsMemory(0, (int)file.Length));
-
-        // return the file as a string
         var fileContent = Encoding.ASCII.GetString(bytes);
-
-        // encrypt just the file
         var encryptedFileStr = EncryptFileToString(fileContent, password);
-
-        // attach the password not encrypted to decrypt file on server side
         var payload = $"{password}|{encryptedFileStr}";
-
-        // convert payload to bytes
         var convertedToBytes = Encoding.ASCII.GetBytes(payload);
-        Console.WriteLine($"Sending {convertedToBytes.Length} bytes");
+
         ms.Write(convertedToBytes, 0, convertedToBytes.Length);
 
         return ms;
     }
 
     public async Task<string> Receive()
-{
-    var chunks = new List<byte[]>();
-    var totalBytesReceived = 0;
-    var buffer = new byte[1024]; // 1KB buffer
-
-    while (true)
     {
-        var bytesReceived = await Socket.ReceiveAsync(buffer, SocketFlags.None);
-        Console.WriteLine(bytesReceived);
+        var chunks = new List<byte[]>();
+        var totalBytesReceived = 0;
+        var buffer = new byte[Kb];
 
-        if (bytesReceived == 0) break; // Connection closed by server
-        
-        var chunk = new byte[bytesReceived];
-        Array.Copy(buffer, chunk, bytesReceived);
-        chunks.Add(chunk);
-        totalBytesReceived += bytesReceived;
+        while (true)
+        {
+            var bytesReceived = await Socket.ReceiveAsync(buffer, SocketFlags.None);
+
+            if (bytesReceived == NoBytes) break;
+
+            var chunk = new byte[bytesReceived];
+
+            Array.Copy(buffer, chunk, bytesReceived);
+
+            chunks.Add(chunk);
+            totalBytesReceived += bytesReceived;
+        }
+
+        if (totalBytesReceived == NoBytes) return string.Empty;
+
+        var completeData = new byte[totalBytesReceived];
+        var offset = 0;
+
+        foreach (var chunk in chunks)
+        {
+            Array.Copy(chunk, 0, completeData, offset, chunk.Length);
+            offset += chunk.Length;
+        }
+
+        return Encoding.ASCII.GetString(completeData, 0, totalBytesReceived);
     }
-
-    Console.WriteLine($"Total bytes received: {totalBytesReceived}");
-
-    if (totalBytesReceived == 0) return string.Empty;
-
-    var completeData = new byte[totalBytesReceived];
-    var offset = 0;
-    foreach (var chunk in chunks)
-    {
-        Array.Copy(chunk, 0, completeData, offset, chunk.Length);
-        offset += chunk.Length;
-    }
-
-    return Encoding.ASCII.GetString(completeData, 0, totalBytesReceived);
-}
 
 
     public void Teardown()
@@ -99,7 +95,7 @@ public class Client(string ipAddress, int port)
 
     public void DisplayMessage(string message)
     {
-        Console.WriteLine($"The Decrypted Message is:\n{message}");
+        Console.WriteLine($"The Decrypted Message is:\n\n{message}");
     }
 
     public void IsError(string data)
