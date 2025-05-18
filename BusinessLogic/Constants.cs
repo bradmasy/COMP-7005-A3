@@ -29,4 +29,5 @@ public static class Constants
     public const int MilliSeconds = 1000;
     public const int SizePrefix = 8;
     public const int Kb = 1024;
+    public const int ServerSocket = 0;
 }

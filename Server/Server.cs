@@ -6,10 +6,25 @@ using static BusinessLogic.Constants;
 
 namespace Server;
 
-public class Server(string ipAddress, int port, int delayBeforeSec, int delayAfterSec)
+public class Server
 {
-    private readonly Socket _serverSocket = new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-    private readonly List<Socket> _clients = [];
+    private readonly Socket _serverSocket;
+    private readonly List<Socket> _clients;
+    private readonly string _ipAddress;
+    private readonly int _port;
+    private readonly int _delayBeforeSec;
+    private readonly int _delayAfterSec;
+
+    public Server(string ipAddress, int port, int delayBeforeSec, int delayAfterSec)
+    {
+        _ipAddress = ipAddress;
+        _port = port;
+        _delayBeforeSec = delayBeforeSec;
+        _delayAfterSec = delayAfterSec;
+        _ipAddress = ipAddress;
+        _serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        _clients = [_serverSocket];
+    }
 
     public async Task Run()
     {
@@ -21,9 +36,9 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
 
             while (true)
             {
-                if (_serverSocket.Poll(0, SelectMode.SelectRead))
+                if (_clients[ServerSocket].Poll(0, SelectMode.SelectRead))
                 {
-                    var clientSocket = await _serverSocket.AcceptAsync();
+                    var clientSocket = await _clients[ServerSocket].AcceptAsync();
                     _clients.Add(clientSocket);
 
                     DisplayMessage($"Adding new client: {clientSocket.Handle}");
@@ -44,17 +59,17 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
         }
     }
 
-    private async Task<byte[]> ReceiveAndDecryptedData(byte[] buffer, int size)
+    private async Task<byte[]> ReceiveAndDecryptedData(byte[] buffer)
     {
         var data = Encoding.ASCII.GetString(buffer, 0, buffer.Length);
 
         DisplayMessage("About to decrypt message...");
 
-        await AddDelay(delayBeforeSec);
+        await AddDelay(_delayBeforeSec);
 
         var decryptedFile = DecryptPayloadToData(data);
 
-        await AddDelay(delayAfterSec);
+        await AddDelay(_delayAfterSec);
 
         DisplayMessage("decryption complete after delays...");
 
@@ -72,12 +87,7 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
 
     public void TearDown()
     {
-        _serverSocket.Close();
-    }
-
-    private static void Flush(byte[] buffer)
-    {
-        buffer.AsSpan().Clear();
+        _clients[ServerSocket].Close();
     }
 
     private static async Task<byte[]> ReadIncomingDataStream(Socket sock)
@@ -125,7 +135,7 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
             var received = await ReadIncomingDataStream(sock);
             DisplayMessage($"Connection has received {received.Length} bytes.");
 
-            var decryptedFileBytes = await ReceiveAndDecryptedData(received, received.Length);
+            var decryptedFileBytes = await ReceiveAndDecryptedData(received);
             DisplayMessage("Sending decrypted data back to client...");
 
             await Send(sock, decryptedFileBytes);
@@ -137,6 +147,7 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
         }
         finally
         {
+            // failsafe if the socket has disconnected
             if (sock.Connected)
             {
                 DisplayMessage("Closing socket");
@@ -191,7 +202,7 @@ public class Server(string ipAddress, int port, int delayBeforeSec, int delayAft
         // Set socket option before binding
         _serverSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
-        var endpoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
+        var endpoint = new IPEndPoint(IPAddress.Parse(_ipAddress), _port);
         _serverSocket.Bind(endpoint);
         _serverSocket.Listen(Connections);
     }
